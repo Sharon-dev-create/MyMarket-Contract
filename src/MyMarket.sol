@@ -144,7 +144,7 @@ contract MyMarket {
    }
 
    //function to allow the seller to claim the paid funds after timestamp where the buyer did not confirm delivery
-   function claimAfterTimeout(uint256 orderId) external  {
+   function claimAfterTimeout(uint256 orderId) external onlySeller(orderId)  {
       Order storage order = orders[orderId];
       require(order.state == OrderState.Shipped, "Not shipped");
 
@@ -177,5 +177,6 @@ contract MyMarket {
          bool ok = paymentToken.transfer(order.buyer, order.amount);
          require(ok, "Token transfer failed");
       } 
+      emit Refunded(orderId);
    }   
 }

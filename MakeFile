@@ -1,6 +1,6 @@
 -include .env
 
-.PHONY: all test clean deploy fund help install snapshot format anvil local-deploy 
+.PHONY: all clean build test deploy deploy-anvil deploy-sepolia deploy-mainnet deploy-mock-sepolia verify help
 
 DEFAULT_ANVIL_KEY := 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 PRIVATE_KEY := 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
@@ -58,7 +58,7 @@ anvil:
 	anvil
 
 deploy-anvil:
-	forge script script/DeployMyMarketAndLog.s.sol:DeplyMyMarket \
+	forge script script/DeployMyMarketAndLog.s.sol:DeployMyMarketAndLog \
 		--rpc-url http://127.0.0.1:8545 \
 		--account myMarketDeployer \
 		--sender $(DEPLOYER_ADDRESS) \
@@ -66,8 +66,8 @@ deploy-anvil:
 		-vvvv
 
 deploy-sepolia:
-	forge script script/DeployMyMarketAndLog.s.sol:DeplyMyMarket \
-		--rpc-url $(RPC_URL_SEPOLIA) \
+	forge script script/DeployMyMarketAndLog.s.sol:DeployMyMarketAndLog \
+		--rpc-url $(SEPOLIA_RPC_URL) \
 		--account myMarketDeployer \
 		--sender $(DEPLOYER_ADDRESS) \
 		--broadcast \
@@ -76,8 +76,19 @@ deploy-sepolia:
 		-vvvv
 
 deploy-mainnet:
-	forge script script/DeployMyMarketAndLog.s.sol:DeplyMyMarket \
-		--rpc-url $(RPC_URL_MAINNET) \
+	forge script script/DeployMyMarketAndLog.s.sol:DeployMyMarketAndLog \
+		--rpc-url $(MAINNET_RPC_URL) \
+		--account myMarketDeployer \
+		--sender $(DEPLOYER_ADDRESS) \
+		--broadcast \
+		--verify \
+		--etherscan-api-key $(ETHERSCAN_API_KEY) \
+		-vvvv
+```
+
+deploy-mock-sepolia:
+	forge script script/DeployMockERC20.s.sol:DeployMockERC20 \
+		--rpc-url $(SEPOLIA_RPC_URL) \
 		--account myMarketDeployer \
 		--sender $(DEPLOYER_ADDRESS) \
 		--broadcast \
