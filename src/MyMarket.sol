@@ -60,12 +60,16 @@ contract MyMarket {
       _;
    }
 
+   modifier validOrder(uint256 orderId) {
+      require(orderId < orderCount, "Order does not exist");
+      _;
+   }
+
    //Seller calls createOrder()
    //Contract stores seller + price
    //Order state = Created
    function createOrder(uint256 price) external {
      _createOrder(price, PaymentType.TOKEN);
-
      orderCount++;
    }
 
@@ -94,7 +98,8 @@ contract MyMarket {
    function depositToken(uint256 orderId) external payable {
       //Order must exist
       Order storage order = orders[orderId];
-
+      
+      require(orderId < orderCount, "Order does not exist");
       require(order.state == OrderState.Created, "Order already Funded");
       require(order.paymentType == PaymentType.TOKEN, "Order is ETH");
       require(order.amount > 0, "Invalid amount");
@@ -106,7 +111,7 @@ contract MyMarket {
       emit OrderFunded(orderId, msg.sender, order.amount);
    }
 
-   function depositEth(uint256 orderId) external payable {
+   function depositEth(uint256 orderId) external payable validOrder(orderId){
       Order storage order = orders[orderId];
 
       require(order.state == OrderState.Created, "Order already Funded");
@@ -162,7 +167,7 @@ contract MyMarket {
       emit OrderDelivered(orderId, order.buyer);
    }
 
-   function refundBuyer(uint256 orderId) public{
+   function refundBuyer(uint256 orderId) public {
       Order storage order = orders[orderId];
 
       require(msg.sender == order.buyer, "Not the buyer");
