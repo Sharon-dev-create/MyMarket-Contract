@@ -1,0 +1,20 @@
+.container {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  display: flex; flex-direction: column;
+  gap: 8px; z-index: 999;
+}
+
+.toast {
+  padding: 11px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  max-width: 340px;
+  border: 1px solid;
+  animation: toastIn .3s ease both;
+  display: flex; align-items: flex-start; gap: 9px;
+}
+
+.success { background: #071a0f; border-color: #14532d; color: #4ade80; }
+.error   { background: #180707; border-color: #450a0a; color: #f87171; }
+.info    { background: #080f1c; border-color: #1e3a5f; color: #60a5fa; }

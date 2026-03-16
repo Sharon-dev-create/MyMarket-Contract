@@ -5,7 +5,7 @@ import {IERC20} from "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.so
 
 contract MyMarket {
    // State variabes
-   IERC20 public immutable paymentToken;
+   IERC20 public immutable PAYMENT_TOKEN;
 
    // Events
    event OrderCreated(uint256 orderId, address seller);
@@ -46,7 +46,7 @@ contract MyMarket {
 
    constructor(address token) {
       require(token != address(0), "Token address required");
-      paymentToken = IERC20(token);
+      PAYMENT_TOKEN = IERC20(token);
    }
 
    // Modifiers
@@ -104,7 +104,7 @@ contract MyMarket {
       require(order.paymentType == PaymentType.TOKEN, "Order is ETH");
       require(order.amount > 0, "Invalid amount");
 
-      bool ok = paymentToken.transferFrom(msg.sender, address(this), order.amount);
+      bool ok = PAYMENT_TOKEN.transferFrom(msg.sender, address(this), order.amount);
       require(ok, "Token transfer failed");
       order.buyer = msg.sender;
       order.state = OrderState.Funded;
@@ -142,7 +142,7 @@ contract MyMarket {
          (bool ok, ) = payable(order.seller).call{value: order.amount}("");
          require(ok, "ETH transfer failed");
       } else {
-         bool ok = paymentToken.transfer(order.seller, order.amount);
+         bool ok = PAYMENT_TOKEN.transfer(order.seller, order.amount);
          require(ok, "Token transfer failed");
       }
       emit OrderDelivered(orderId, msg.sender);
@@ -161,7 +161,7 @@ contract MyMarket {
          (bool ok, ) = payable(order.seller).call{value: order.amount}("");
          require(ok, "ETH transfer failed");
       } else {
-         bool ok = paymentToken.transfer(order.seller, order.amount);
+         bool ok = PAYMENT_TOKEN.transfer(order.seller, order.amount);
          require(ok, "Token transfer failed");
       }
       emit OrderDelivered(orderId, order.buyer);
@@ -179,9 +179,17 @@ contract MyMarket {
          (bool ok, ) = payable(order.buyer).call{value: order.amount}("");
          require(ok, "ETH transfer failed");
       } else {
-         bool ok = paymentToken.transfer(order.buyer, order.amount);
+         bool ok = PAYMENT_TOKEN.transfer(order.buyer, order.amount);
          require(ok, "Token transfer failed");
       } 
       emit Refunded(orderId);
    }   
+
+      receive() external payable {
+      revert("ETH not accepted");
+       }
+
+      fallback() external payable {
+      revert("Function does not exist");
+       }
 }
