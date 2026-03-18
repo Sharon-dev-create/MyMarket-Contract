@@ -160,8 +160,11 @@ export function ShopPage() {
                   key={product.id}
                   product={product}
                   order={product.orderId < orderCount ? (ordersById.get(product.orderId) ?? null) : null}
+                  marketAddress={marketAddress}
+                  tokenAddress={tokenAddress}
                   tokenSymbol={tokenSymbol}
                   tokenDecimals={tokenDecimals}
+                  buyerAddress={buyerAddress}
                   inCart={cart.set.has(product.orderId)}
                   onAdd={() => cart.add(product.orderId)}
                   onRemove={() => cart.remove(product.orderId)}

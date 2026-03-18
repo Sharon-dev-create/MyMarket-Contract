@@ -1,11 +1,6 @@
-import { useMemo, useState } from "react";
-import { type Address, zeroAddress } from "viem";
-import { usePublicClient, useReadContract, useWriteContract } from "wagmi";
+import { type Address } from "viem";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
-import { erc20Abi } from "../contracts/erc20Abi";
-import { myMarketAbi } from "../contracts/myMarketAbi";
-import { getChainId } from "../lib/env";
 import { formatEth, formatToken, formatUsdFromCents } from "../lib/format";
 import { type Product } from "../data/products";
 
@@ -19,13 +14,21 @@ export type CartOrder = {
   paymentType: number; // 0 ETH, 1 TOKEN
 };
 
-function isPurchasable(o: CartOrder) {
-  return (
-    o.seller !== zeroAddress &&
-    o.buyer === zeroAddress &&
-    o.state === 0 &&
-    o.amount > 0n
-  );
+function stateLabel(state: number) {
+  switch (state) {
+    case 0:
+      return "Created";
+    case 1:
+      return "Funded";
+    case 2:
+      return "Shipped";
+    case 3:
+      return "Delivered";
+    case 4:
+      return "Refunded";
+    default:
+      return `State ${state}`;
+  }
 }
 
 export function CartPanel({
@@ -47,99 +50,13 @@ export function CartPanel({
   onRemove: (orderId: number) => void;
   onClear: () => void;
 }) {
-  const targetChainId = getChainId();
-  const publicClient = usePublicClient({ chainId: targetChainId });
-  const { writeContractAsync } = useWriteContract();
-  const [status, setStatus] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
-
-  const purchasable = orders.filter(isPurchasable);
-  const ethOrders = purchasable.filter((o) => o.paymentType === 0);
-  const tokenOrders = purchasable.filter((o) => o.paymentType === 1);
-
-  const ethTotal = ethOrders.reduce((acc, o) => acc + o.amount, 0n);
-  const tokenTotal = tokenOrders.reduce((acc, o) => acc + o.amount, 0n);
+  const ethTotal = orders
+    .filter((o) => o.paymentType === 0)
+    .reduce((acc, o) => acc + o.amount, 0n);
+  const tokenTotal = orders
+    .filter((o) => o.paymentType === 1)
+    .reduce((acc, o) => acc + o.amount, 0n);
   const usdTotalCents = orders.reduce((acc, o) => acc + o.product.usdPriceCents, 0);
-
-  const allowance = useReadContract({
-    address: tokenAddress,
-    abi: erc20Abi,
-    functionName: "allowance",
-    chainId: targetChainId,
-    args: [buyerAddress ?? zeroAddress, marketAddress],
-    query: { enabled: tokenOrders.length > 0 && !!buyerAddress && tokenAddress !== zeroAddress },
-  });
-
-  const needsApproval = useMemo(() => {
-    if (tokenOrders.length === 0) return false;
-    const current = (allowance.data as bigint | undefined) ?? 0n;
-    return current < tokenTotal;
-  }, [allowance.data, tokenOrders.length, tokenTotal]);
-
-  const disabledReason =
-    !buyerAddress
-      ? "Connect wallet"
-      : purchasable.length === 0
-        ? "No purchasable items"
-        : !publicClient
-          ? "No RPC client"
-          : null;
-
-  async function checkout() {
-    if (disabledReason) return;
-    if (!publicClient) return;
-    if (!buyerAddress) return;
-
-    setError(null);
-    setIsCheckingOut(true);
-    try {
-      if (tokenOrders.length > 0 && needsApproval) {
-        setStatus(`Approving ${tokenSymbol}…`);
-        const approveHash = await writeContractAsync({
-          address: tokenAddress,
-          abi: erc20Abi,
-          functionName: "approve",
-          chainId: targetChainId,
-          args: [marketAddress, tokenTotal],
-        });
-        await publicClient.waitForTransactionReceipt({ hash: approveHash });
-      }
-
-      for (const o of tokenOrders) {
-        setStatus(`Funding token order #${o.orderId}…`);
-        const hash = await writeContractAsync({
-          address: marketAddress,
-          abi: myMarketAbi,
-          functionName: "depositToken",
-          chainId: targetChainId,
-          args: [BigInt(o.orderId)],
-        });
-        await publicClient.waitForTransactionReceipt({ hash });
-      }
-
-      for (const o of ethOrders) {
-        setStatus(`Funding ETH order #${o.orderId}…`);
-        const hash = await writeContractAsync({
-          address: marketAddress,
-          abi: myMarketAbi,
-          functionName: "depositEth",
-          chainId: targetChainId,
-          args: [BigInt(o.orderId)],
-          value: o.amount,
-        });
-        await publicClient.waitForTransactionReceipt({ hash });
-      }
-
-      setStatus("Checkout complete.");
-      onClear();
-    } catch (e) {
-      setError((e as Error).message ?? String(e));
-      setStatus(null);
-    } finally {
-      setIsCheckingOut(false);
-    }
-  }
 
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-950 p-6">
@@ -150,7 +67,7 @@ export function CartPanel({
             {orders.length} item{orders.length === 1 ? "" : "s"}
           </div>
         </div>
-        <Button variant="ghost" onClick={onClear} disabled={orders.length === 0 || isCheckingOut}>
+        <Button variant="ghost" onClick={onClear} disabled={orders.length === 0}>
           Clear
         </Button>
       </div>
@@ -164,7 +81,6 @@ export function CartPanel({
               o.paymentType === 0
                 ? `${formatEth(o.amount)} ETH`
                 : `${formatToken(o.amount, tokenDecimals)} ${tokenSymbol}`;
-            const ok = isPurchasable(o);
             return (
               <div
                 key={o.orderId}
@@ -175,13 +91,12 @@ export function CartPanel({
                   <div className="text-xs text-slate-500">
                     #{o.orderId} · {formatUsdFromCents(o.product.usdPriceCents)}{" "}
                     <span className="text-[11px] text-slate-500/80">({price})</span>{" "}
-                    {ok ? "" : "· not purchasable"}
+                    · {stateLabel(o.state)}
                   </div>
                 </div>
                 <Button
                   variant="secondary"
                   onClick={() => onRemove(o.orderId)}
-                  disabled={isCheckingOut}
                 >
                   Remove
                 </Button>
@@ -203,24 +118,8 @@ export function CartPanel({
               <div className="font-semibold">{formatToken(tokenTotal, tokenDecimals)} {tokenSymbol}</div>
             </div>
           </Card>
-
-          <Button
-            onClick={() => void checkout()}
-            disabled={!!disabledReason || isCheckingOut}
-            className="w-full"
-            title={disabledReason ?? undefined}
-          >
-            {isCheckingOut ? "Checkout in progress…" : "Checkout (fund orders)"}
-          </Button>
-
-          {status ? <div className="text-xs text-slate-400">{status}</div> : null}
-          {error ? (
-            <div className="rounded-xl border border-rose-900/60 bg-rose-950/40 p-3 text-sm text-rose-200">
-              {error}
-            </div>
-          ) : null}
           <div className="text-[11px] text-slate-500">
-            Checkout sends multiple transactions (one per order). The contract can’t take a single “cart total” payment.
+            “Add to cart” triggers payment first, then stores the item in your local cart for tracking.
           </div>
         </div>
       )}
