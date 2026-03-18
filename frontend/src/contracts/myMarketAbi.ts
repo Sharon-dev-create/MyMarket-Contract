@@ -37,9 +37,36 @@ export const myMarketAbi = [
   {
     type: "function",
     name: "depositToken",
-    stateMutability: "payable",
+    stateMutability: "nonpayable",
     inputs: [{ name: "orderId", type: "uint256" }],
+    outputs: []
+  },
+  {
+    type: "function",
+    name: "pendingEth",
+    stateMutability: "view",
+    inputs: [{ name: "", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }]
+  },
+  {
+    type: "function",
+    name: "pendingToken",
+    stateMutability: "view",
+    inputs: [{ name: "", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }]
+  },
+  {
+    type: "function",
+    name: "withdrawEth",
+    stateMutability: "nonpayable",
+    inputs: [],
+    outputs: []
+  },
+  {
+    type: "function",
+    name: "withdrawToken",
+    stateMutability: "nonpayable",
+    inputs: [],
     outputs: []
   }
 ] as const;
-
