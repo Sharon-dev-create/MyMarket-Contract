@@ -31,6 +31,12 @@ This is intentionally minimal and designed for learning, prototyping, or small m
 - ETH payments use native ETH transfers.
 - TOKEN payments use an ERC-20 token address provided at deployment.
 
+### Platform Fees
+- The contract can optionally take a platform fee on successful delivery (`confirmDelivery`) or seller timeout claim (`claimAfterTimeout`).
+- Fees are configured in basis points (bps): `100 bps = 1%`.
+- By default, `platformFeeBps` is `0` (no fee) and `feeRecipient` is the deployer/owner.
+- Only the contract owner can change `platformFeeBps` and `feeRecipient`.
+
 ### Order States
 - `Created`: Order created by seller, awaiting buyer funding.
 - `Funded`: Buyer has deposited funds into escrow.
@@ -73,9 +79,9 @@ The contract is deployed with a single ERC-20 token address used for TOKEN order
 - `markShipped(uint256 orderId)`
   - Seller marks order as shipped.
 - `confirmDelivery(uint256 orderId)`
-  - Buyer confirms delivery; releases funds to seller.
+  - Buyer confirms delivery; releases funds to seller (minus platform fee, if configured).
 - `claimAfterTimeout(uint256 orderId)`
-  - Seller claims funds 7 days after shipping if buyer does not confirm.
+  - Seller claims funds 7 days after shipping if buyer does not confirm (minus platform fee, if configured).
 
 ### Refunds
 - `refundBuyer(uint256 orderId)`
@@ -215,6 +221,21 @@ cast send <MYMARKET_ADDRESS> \
 - `script/`: Deployment scripts
 - `test/`: Tests
 - `foundry.toml`: Foundry configuration
+- `frontend/`: React + Tailwind buyer UI
+
+## Frontend (Buyer UI)
+A React + Tailwind frontend is available in `frontend/`.
+
+Quick start:
+```bash
+cd frontend
+cp .env.example .env.local
+# set VITE_MYMARKET_ADDRESS in .env.local
+npm install
+npm run dev
+```
+
+The UI shows a product catalog (images + USD display prices), a cart, and a checkout that funds the underlying on-chain `orderId` listings.
 
 ## License
 MIT

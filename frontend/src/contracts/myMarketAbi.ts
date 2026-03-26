@@ -43,6 +43,31 @@ export const myMarketAbi = [
   },
   {
     type: "function",
+    name: "buy",
+    stateMutability: "payable",
+    inputs: [{ name: "orderId", type: "uint256" }],
+    outputs: []
+  },
+  {
+    type: "function",
+    name: "isOrderBuyable",
+    stateMutability: "view",
+    inputs: [{ name: "orderId", type: "uint256" }],
+    outputs: [{ name: "", type: "bool" }]
+  },
+  {
+    type: "function",
+    name: "relistOrder",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "orderId", type: "uint256" },
+      { name: "price", type: "uint256" },
+      { name: "paymentType", type: "uint8" }
+    ],
+    outputs: []
+  },
+  {
+    type: "function",
     name: "pendingEth",
     stateMutability: "view",
     inputs: [{ name: "", type: "address" }],
