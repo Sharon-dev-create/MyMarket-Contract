@@ -26,8 +26,8 @@ export function LoginPage() {
     <Layout>
       <div className="mx-auto max-w-xl">
         <Card
-          title="Connect your wallet"
-          subtitle="Login to browse listings and fund an order."
+          title="Connect your wallet to start"
+          subtitle="Connect wallet to login and start buying."
         >
           <div className="space-y-3">
             <Button

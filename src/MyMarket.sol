@@ -16,7 +16,7 @@ contract MyMarket is Ownable, ReentrancyGuard {
    mapping(address => uint256) public pendingToken;
 
    // Platform fees (basis points, 1 bps = 0.01%)
-   uint16 public constant BPS_DENOMINATOR = 10_000;
+   uint16 public constant BPS_DENOMINATOR = 10_000;  
    uint16 public constant MAX_PLATFORM_FEE_BPS = 1_000; // 10%
    uint16 public platformFeeBps;
    address public feeRecipient;
